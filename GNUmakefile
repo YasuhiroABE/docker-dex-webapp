@@ -14,7 +14,7 @@ run:
 	sudo docker run -it --rm \
 		--env DEXC_LISTENURL="http://0.0.0.0:5555" \
 		--env DEXC_REDIRECTURL="http://127.0.0.1:5555/callback" \
-		--env DEXC_ISSUERURL="https://opm00h.u-aizu.ac.jp/dex" \
+		--env DEXC_ISSUERURL="http://10.1.1.1:5556/dex" \
 		-p 5555:5555 \
                 $(TARGET_DOCKER)
 

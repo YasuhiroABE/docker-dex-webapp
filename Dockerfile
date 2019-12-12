@@ -1,19 +1,23 @@
 
-FROM ubuntu:18.04
+FROM golang:alpine as dex
+
+RUN apk --no-cache add git make gcc libc-dev
+
+ENV GOPATH /root/go
+RUN go get github.com/dexidp/dex || true
+WORKDIR /root/go/src/github.com/dexidp/dex
+RUN make
+
+FROM alpine:latest
 
 MAINTAINER YasuhiroABE <yasu@yasundial.org>
 
-ADD etc.resolv.conf /etc/resolv.conf
-ENV GOPATH /root/go
+RUN apk --no-cache add ca-certificates
+RUN apk --no-cache add bash
 
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-    golang-go git ca-certificates make build-essential
+COPY --from=dex /root/go/src/github.com/dexidp/dex /dex
+WORKDIR /dex
 
-RUN go get github.com/dexidp/dex || true
-WORKDIR /root/go/src/github.com/dexidp/dex
-
-RUN make
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
@@ -24,7 +28,8 @@ ENV DEXC_REDIRECTURL="http://192.168.1.1:5555/callback"
 EXPOSE 5555
 ## DEX Service URL
 ENV DEXC_ISSUERURL="http://192.168.1.2:5556/dex"
+## CLIENT INFO
+ENV DEXC_CLIENT_ID="example-app"
+ENV DEXC_CLIENT_SECRET="ZXhhbXBsZS1hcHAtc2VjcmV0"
 
 ENTRYPOINT ["/run.sh"]
-
-
