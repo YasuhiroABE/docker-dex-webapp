@@ -6,7 +6,7 @@ RUN apk --no-cache add git make gcc libc-dev
 ENV GOPATH /root/go
 RUN go get github.com/dexidp/dex || true
 WORKDIR /root/go/src/github.com/dexidp/dex
-RUN make
+RUN make build examples
 
 FROM alpine:latest
 
