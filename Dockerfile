@@ -1,23 +1,23 @@
 
-FROM golang:alpine3.12 as dex
+FROM golang:1.16.3-alpine3.13 as dex
 
-RUN apk --no-cache add git make gcc libc-dev
+RUN apk update && apk --no-cache add git make gcc libc-dev
 
-ENV GOPATH /root/go
-RUN go get github.com/dexidp/dex || true
-WORKDIR /root/go/src/github.com/dexidp/dex
-RUN make build examples
+RUN mkdir /work
+WORKDIR /work
+RUN git clone https://github.com/dexidp/dex.git
+WORKDIR /work/dex
+RUN make && make examples
 
-FROM alpine:latest
+FROM alpine:3.13.5
 
 MAINTAINER YasuhiroABE <yasu@yasundial.org>
 
-RUN apk --no-cache add ca-certificates
-RUN apk --no-cache add bash
+RUN apk update && apk --no-cache add ca-certificates bash
 
-COPY --from=dex /root/go/src/github.com/dexidp/dex /dex
+RUN mkdir -p /dex/bin/.
+COPY --from=dex /work/dex/bin/. /dex/bin/.
 WORKDIR /dex
-
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
@@ -31,5 +31,9 @@ ENV DEXC_ISSUERURL="http://192.168.1.2:5556/dex"
 ## CLIENT INFO
 ENV DEXC_CLIENT_ID="example-app"
 ENV DEXC_CLIENT_SECRET="ZXhhbXBsZS1hcHAtc2VjcmV0"
+
+RUN addgroup dexuser
+RUN adduser -S -G dexuser dexuser
+USER dexuser
 
 ENTRYPOINT ["/run.sh"]
