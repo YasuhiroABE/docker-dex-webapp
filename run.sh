@@ -1,6 +1,5 @@
 #!/bin/bash -x
 
-cd /dex
 exec bin/example-app  \
     --client-id "${DEXC_CLIENT_ID}" \
     --client-secret "${DEXC_CLIENT_SECRET}" \

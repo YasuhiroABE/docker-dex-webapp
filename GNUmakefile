@@ -11,19 +11,12 @@ build:
 	sudo docker build . --tag $(TARGET_DOCKER)
 
 run:
+	@echo "Before execting, please ensure running the dex server on 10.1.1.1:5556."
 	sudo docker run -it --rm \
 		--env DEXC_LISTENURL="http://0.0.0.0:5555" \
-		--env DEXC_REDIRECTURL="http://127.0.0.1:5555/callback" \
+		--env DEXC_REDIRECTURL="http://localhost:8000/callback" \
 		--env DEXC_ISSUERURL="http://10.1.1.1:5556/dex" \
-		-p 5555:5555 \
-                $(TARGET_DOCKER)
-
-bg:
-	sudo docker run -d --rm \
-		--env DEXC_LISTENURL="http://0.0.0.0:5555" \
-		--env DEXC_REDIRECTURL="http://127.0.0.1:5555/callback" \
-		--env DEXC_ISSUERURL="https://opm00h.u-aizu.ac.jp/dex" \
-		-p 5555:5555 \
+		-p 8000:5555 \
                 $(TARGET_DOCKER)
 
 push:
