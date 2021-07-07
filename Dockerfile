@@ -1,5 +1,5 @@
 
-FROM golang:1.16.3-alpine3.13 as dex
+FROM golang:1.16.5-alpine3.13 as dex
 
 RUN apk update && apk --no-cache add git make gcc libc-dev
 
