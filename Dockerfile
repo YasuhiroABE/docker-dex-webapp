@@ -1,39 +1,47 @@
+FROM docker.io/library/golang:1.22-alpine as dex
+ARG DEX_TAGNAME=v2.39.1
 
-FROM golang:1.16.5-alpine3.13 as dex
-
-RUN apk update && apk --no-cache add git make gcc libc-dev
+RUN apk --no-cache add git make gcc libc-dev patch
 
 RUN mkdir /work
 WORKDIR /work
-RUN git clone https://github.com/dexidp/dex.git
+RUN git clone --depth 1 --branch $DEX_TAGNAME https://github.com/dexidp/dex.git
+
 WORKDIR /work/dex
-RUN make && make examples
+##COPY image/logo.png web/themes/dark/logo.png
+##COPY image/logo.png web/themes/light/logo.png
+COPY patch/20240523-v2.39.1.patch /v2.39.1.patch
+RUN patch -p1 < /v2.39.1.patch
+RUN make build && make examples
 
-FROM alpine:3.13.5
+FROM docker.io/library/alpine:3.19
 
-MAINTAINER YasuhiroABE <yasu@yasundial.org>
+MAINTAINER YasuhiroABE <yasu-abe@u-aizu.ac.jp>
 
-RUN apk update && apk --no-cache add ca-certificates bash
+RUN apk update && apk add --no-cache bash ca-certificates
 
-RUN mkdir -p /dex/bin/.
+RUN mkdir -p /dex/bin
 COPY --from=dex /work/dex/bin/. /dex/bin/.
-WORKDIR /dex
 COPY run.sh /run.sh
 RUN chmod +x /run.sh
 
-## example-app listener and callback URLs
-## Both connection must be routed to this service.
+WORKDIR /dex
+
+## Server Settings
+EXPOSE 5556
+ENV DEX_CONFIG_TEMPLPATH="/config/config-ldap.yaml.templ"
+ENV DEX_ISSUER="http://127.0.0.1:5556/dex "
+ENV DEX_APP01_REDIRECTURI="http://example.app:5555/callback"
+
+## Client Settings
+EXPOSE 5555
 ENV DEXC_LISTENURL="http://0.0.0.0:5555"
 ENV DEXC_REDIRECTURL="http://192.168.1.1:5555/callback"
-EXPOSE 5555
-## DEX Service URL
 ENV DEXC_ISSUERURL="http://192.168.1.2:5556/dex"
-## CLIENT INFO
 ENV DEXC_CLIENT_ID="example-app"
 ENV DEXC_CLIENT_SECRET="ZXhhbXBsZS1hcHAtc2VjcmV0"
 
-RUN addgroup dexuser
-RUN adduser -S -G dexuser dexuser
-USER dexuser
+RUN mkdir /config /data
+VOLUME ["/config", "/data"]
 
 ENTRYPOINT ["/run.sh"]

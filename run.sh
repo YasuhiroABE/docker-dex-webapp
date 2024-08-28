@@ -1,6 +1,6 @@
 #!/bin/bash -x
 
-exec bin/example-app  \
+exec /dex/bin/example-app  \
     --client-id "${DEXC_CLIENT_ID}" \
     --client-secret "${DEXC_CLIENT_SECRET}" \
     --listen "${DEXC_LISTENURL}" \

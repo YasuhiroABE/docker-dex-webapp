@@ -1,0 +1,112 @@
+diff --git a/examples/example-app/templates.go b/examples/example-app/templates.go
+index a9425ead..881832b2 100644
+--- a/examples/example-app/templates.go
++++ b/examples/example-app/templates.go
+@@ -1,6 +1,7 @@
+ package main
+ 
+ import (
++	"encoding/json"
+ 	"html/template"
+ 	"log"
+ 	"net/http"
+@@ -19,15 +20,15 @@ input { display: table-cell; }
+     <form action="/login" method="post">
+       <p>
+         <label> Authenticate for: </label>
+-        <input type="text" name="cross_client" placeholder="list of client-ids">
++        <input type="text" name="cross_client" placeholder="list of client-ids" disabled="">
+       </p>
+       <p>
+         <label>Extra scopes: </label>
+-        <input type="text" name="extra_scopes" placeholder="list of scopes">
++        <input type="text" name="extra_scopes" placeholder="list of scopes" value="groups">
+       </p>
+       <p>
+         <label>Connector ID: </label>
+-        <input type="text" name="connector_id" placeholder="connector id">
++        <input type="text" name="connector_id" placeholder="connector id" disabled="">
+       </p>
+       <p>
+         <label>Request offline access: </label>
+@@ -50,6 +51,7 @@ type tokenTmplData struct {
+ 	RefreshToken string
+ 	RedirectURL  string
+ 	Claims       string
++	ClaimsMap    map[string]any
+ }
+ 
+ var tokenTmpl = template.Must(template.New("token.html").Parse(`<html>
+@@ -66,11 +68,35 @@ pre {
+     </style>
+   </head>
+   <body>
+-    <p> ID Token: <pre><code>{{ .IDToken }}</code></pre></p>
+-    <p> Access Token: <pre><code>{{ .AccessToken }}</code></pre></p>
+-    <p> Claims: <pre><code>{{ .Claims }}</code></pre></p>
++    <p> <span style="text-decoration: underline;">ID Token: </span><pre><code>{{ .IDToken }}</code></pre></p>
++    <p> <span style="text-decoration: underline;">~/.kube/config file for kubecamp.u-aizu.ac.jp: </span><pre style="background: #5f5f5f;"><code style="color: white;">apiVersion: v1
++clusters:
++- cluster:
++    certificate-authority-data: LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURCVENDQWUyZ0F3SUJBZ0lJTTgwQ3Q0TnlXZHN3RFFZSktvWklodmNOQVFFTEJRQXdGVEVUTUJFR0ExVUUKQXhNS2EzVmlaWEp1WlhSbGN6QWVGdzB5TkRBeU1EVXdOekl3TXpoYUZ3MHpOREF5TURJd056STFNemhhTUJVeApFekFSQmdOVkJBTVRDbXQxWW1WeWJtVjBaWE13Z2dFaU1BMEdDU3FHU0liM0RRRUJBUVVBQTRJQkR3QXdnZ0VLCkFvSUJBUURqbVpnLy9IYk1HaGxBTWNobTBaZ1BNeGFvc3REamwyLytmQWcwa1d0dzB4endIeENGUjVoUzV5VnAKVjJIRGVNUzd1NnQwZkg5QkI5Q3BsUVdYeUhtTUpRNWRzVHF2TXZZemFPRVpHN1BWSXQyekNFYnhyemxzSGdTVApOeGd2V1YxZmpBV3FCUllaY3lITjRFbnhkMVY1MGM2aGQrREVBRzUzNStINDlOeXVqRnlnTmgzVmg1SlJERFNlCmtXMTkwcVhGVGExUjRweFlySld4RFkzLzJBYjk5NDNYTG8yMXAvWjI2ck02elB5WDNKRW1XVHdwSXlOOEJ3RUsKZThzOXNLWURkeXRVTzhCaHB3WnFvTVlaTHZuR1M0aml0K2w2K2hJeDFOYnVkaGt2K0tSa1htb0JBMFE3QmxYVQpJcDROZlBHbjhZb2xMMHd4dE84REt2MEFSbEROQWdNQkFBR2pXVEJYTUE0R0ExVWREd0VCL3dRRUF3SUNwREFQCkJnTlZIUk1CQWY4RUJUQURBUUgvTUIwR0ExVWREZ1FXQkJRdGg5RTc3ZkpCeU5NaW52eHdtZUJnd0krdGV6QVYKQmdOVkhSRUVEakFNZ2dwcmRXSmxjbTVsZEdWek1BMEdDU3FHU0liM0RRRUJDd1VBQTRJQkFRRGRxalRaaElZWgpHM3VNWWEvQ0lXSHJkR2NwVGVPUWhURDFxUTJCb00wYkNjZWh2REM0YVk5S2NyRksrbU0zQlR0YUpMSkhhcE51CjJFTG15akFPV3FYVFJNVVo3Q2U4QmJoNmNsRlVpTC9nZFhzTlFsTmExU1A2RHlabmJUUS9OZGE2MEZIdThsUzkKRHF3NTZaa0JLLzY2K3RhR2FGeVI1aE1iL05TRWJHWkpySlhFSnJQS25ld0Vxa1JoN0VBZmE5NWVmQkJIQmpaRApNY3FsNDdtZU1OMis3N21WOTlOdTdsU0JBcG5JVXEvQ2lzUWFqNFRRamRmY1d5ZGxtQU9CSlNOSGR2S3VpZlh1CndOd0ZseldNUGVmREFWRHU5dE54RVp1RWZJYy9oL3d2YmkyT09yd0Nvd0lSWXExUEgzSDZuOEE2WGU3TmRUcUUKVnRtd2RGY3FESFdVCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K
++    server: https://kubecamp.u-aizu.ac.jp:6443
++  name: cluster.local
++contexts:
++- context:
++    cluster: cluster.local
++    user: {{ .ClaimsMap.email }}
++  name: {{ .ClaimsMap.email }}@cluster.local
++current-context: {{ .ClaimsMap.email }}@cluster.local
++kind: Config
++preferences: {}
++users:
++- name: {{ .ClaimsMap.email }}
++  user:
++    auth-provider:
++      config:
++        client-id: example-app
++        id-token: {{ .IDToken }}
++        idp-issuer-url: https://opm00h.u-aizu.ac.jp/dex
++      name: oidc</code></pre>
++    </p>
++    <p> <span style="text-decoration: underline;">Access Token:</span> <pre><code>{{ .AccessToken }}</code></pre></p>
++    <p> <span style="text-decoration: underline;">Claims:</span> <pre><code>{{ .Claims }}</code></pre></p>
+ 	{{ if .RefreshToken }}
+-    <p> Refresh Token: <pre><code>{{ .RefreshToken }}</code></pre></p>
++    <p> <span style="text-decoration: underline;">Refresh Token:</span> <pre><code>{{ .RefreshToken }}</code></pre></p>
+ 	<form action="{{ .RedirectURL }}" method="post">
+ 	  <input type="hidden" name="refresh_token" value="{{ .RefreshToken }}">
+ 	  <input type="submit" value="Redeem refresh token">
+@@ -81,12 +107,15 @@ pre {
+ `))
+ 
+ func renderToken(w http.ResponseWriter, redirectURL, idToken, accessToken, refreshToken, claims string) {
++	var mapData map[string]any
++	json.Unmarshal([]byte(claims), &mapData)
+ 	renderTemplate(w, tokenTmpl, tokenTmplData{
+ 		IDToken:      idToken,
+ 		AccessToken:  accessToken,
+ 		RefreshToken: refreshToken,
+ 		RedirectURL:  redirectURL,
+ 		Claims:       claims,
++		ClaimsMap:    mapData,
+ 	})
+ }
+ 
+diff --git a/server/handlers.go b/server/handlers.go
+index ccd534d9..85335972 100644
+--- a/server/handlers.go
++++ b/server/handlers.go
+@@ -880,7 +880,11 @@ func (s *Server) calculateCodeChallenge(codeVerifier, codeChallengeMethod string
+ func (s *Server) handleAuthCode(w http.ResponseWriter, r *http.Request, client storage.Client) {
+ 	ctx := r.Context()
+ 	code := r.PostFormValue("code")
+-	redirectURI := r.PostFormValue("redirect_uri")
++	redirectURI, err := url.QueryUnescape(r.PostFormValue("redirect_uri"))
++	if err != nil {
++		s.tokenErrHelper(w, errInvalidRequest, "No redirect_uri provided.", http.StatusBadRequest)
++		return
++	}
+ 
+ 	if code == "" {
+ 		s.tokenErrHelper(w, errInvalidRequest, `Required param: code.`, http.StatusBadRequest)
